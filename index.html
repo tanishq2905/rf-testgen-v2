@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RF TestGen</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;
+  --accent:#00d4ff;--accent2:#7c3aed;--green:#10b981;
+  --red:#ef4444;--amber:#f59e0b;--text:#e2e8f0;
+  --muted:#64748b;--border:#1e293b;
+}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 4px);pointer-events:none;z-index:999}
+
+/* ── Header ── */
+header{padding:16px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.logo{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.logo-text{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.logo-text span{color:var(--accent)}
+.badge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);border:1px solid var(--accent);padding:3px 10px;border-radius:20px;opacity:.7}
+.server-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-left:16px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.online{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot.offline{background:var(--red)}
+
+/* ── Layout ── */
+main{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr auto;height:calc(100vh - 67px)}
+.panel{padding:22px 26px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.panel-left{border-right:1px solid var(--border);grid-row:1/3}
+.panel-right{border-bottom:1px solid var(--border)}
+.panel-results{padding:22px 26px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+
+.panel-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+.panel-label::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.panel-label.green::before{background:var(--green)}
+.panel-label.amber::before{background:var(--amber)}
+
+/* ── Inputs ── */
+.api-row{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center}
+.api-row input{flex:1;background:transparent;border:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none}
+.api-row input::placeholder{color:var(--muted)}
+.api-label{font-size:10px;color:var(--muted);white-space:nowrap;letter-spacing:1px;text-transform:uppercase}
+
+textarea{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;line-height:1.7;padding:16px;resize:none;transition:border-color .2s;min-height:160px}
+textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.07)}
+textarea::placeholder{color:var(--muted)}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 11px;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.06)}
+
+.options-row{display:flex;gap:10px}
+.sel-wrap{display:flex;flex-direction:column;gap:4px;flex:1}
+.sel-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+select{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 10px;cursor:pointer;appearance:none}
+select:focus{outline:none;border-color:var(--accent)}
+
+/* ── Buttons ── */
+.btn-row{display:flex;gap:10px}
+.btn{border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:11px 22px;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.btn-generate{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;flex:1}
+.btn-generate:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,255,.3)}
+.btn-run{background:linear-gradient(135deg,var(--green),#059669);color:#000;flex:1}
+.btn-run:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.3)}
+.btn-both{background:linear-gradient(135deg,var(--accent2),#5b21b6);color:#fff;flex:2}
+.btn-both:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,.3)}
+
+/* ── Code output ── */
+.code-wrapper{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.code-toolbar{display:flex;align-items:center;gap:7px;padding:9px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.mac-dot{width:10px;height:10px;border-radius:50%}
+.mac-r{background:#ff5f57}.mac-y{background:#febc2e}.mac-g{background:#28c840}
+.code-fname{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-left:4px}
+.copy-btn{margin-left:auto;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{border-color:var(--green);color:var(--green)}
+.code-scroll{flex:1;overflow-y:auto;padding:18px}
+.code-scroll::-webkit-scrollbar{width:3px}
+.code-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+pre{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+
+/* syntax */
+.s-sec{color:#f97316;font-weight:600}
+.s-kw{color:var(--accent)}
+.s-var{color:#a78bfa}
+.s-str{color:var(--green)}
+.s-cmt{color:var(--muted);font-style:italic}
+.s-set{color:#f59e0b}
+
+/* ── Placeholder / Loading / Error ── */
+.placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);text-align:center;padding:30px}
+.placeholder-icon{font-family:'JetBrains Mono',monospace;font-size:32px;opacity:.2}
+.placeholder-text{font-size:13px;line-height:1.6}
+.spinner-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.error-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--red);padding:30px;text-align:center;font-size:13px}
+
+/* ── Results panel ── */
+.results-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0}
+.results-area::-webkit-scrollbar{width:3px}
+.results-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.overall-banner{border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;font-weight:700;font-size:15px}
+.overall-banner.pass{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--green)}
+.overall-banner.fail{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+.overall-banner.running{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);color:var(--accent)}
+.banner-icon{font-size:22px}
+.banner-stats{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;opacity:.8}
+
+.test-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px}
+.test-badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;flex-shrink:0}
+.test-badge.pass{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.test-badge.fail{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.test-name{font-size:12px;line-height:1.5}
+.test-msg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red);margin-top:4px}
+
+.stdout-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;max-height:140px;overflow-y:auto}
+.stdout-box pre{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);line-height:1.6;white-space:pre-wrap}
+.stdout-box::-webkit-scrollbar{width:3px}
+.stdout-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.results-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--muted);font-size:12px;text-align:center}
+
+@media(max-width:900px){main{grid-template-columns:1fr;grid-template-rows:auto auto auto}.panel-left{border-right:none;border-bottom:1px solid var(--border)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">RF</div>
+  <div class="logo-text">Test<span>Gen</span></div>
+  <div class="server-status">
+    <div class="dot" id="serverDot"></div>
+    <span id="serverLabel">checking ollama...</span>
+  </div>
+  <div class="badge">Powered by Llama 3</div>
+</header>
+
+<main>
+  <!-- LEFT: Input -->
+  <div class="panel panel-left">
+    <div class="panel-label">Describe your test</div>
+
+    <textarea id="description" placeholder="Describe what you want to test in plain English...
+
+Example: Open Google, search for Robot Framework, click the first result and verify the page title."></textarea>
+
+    <div class="chips">
+      <div class="chip" onclick="useExample(this)">Open Google and search</div>
+      <div class="chip" onclick="useExample(this)">Login to a website</div>
+      <div class="chip" onclick="useExample(this)">Fill and submit a form</div>
+      <div class="chip" onclick="useExample(this)">Verify page title and URL</div>
+    </div>
+
+    <div class="options-row">
+      <div class="sel-wrap">
+        <span class="sel-label">Browser</span>
+        <select id="browser">
+          <option value="chrome">Chrome</option>
+          <option value="firefox">Firefox</option>
+          <option value="edge">Edge</option>
+        </select>
+      </div>
+      <div class="sel-wrap">
+        <span class="sel-label">Headless</span>
+        <select id="headless">
+          <option value="no">No (see browser)</option>
+          <option value="yes">Yes (background)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-generate" onclick="generate()" id="btnGenerate">Generate →</button>
+      <button class="btn btn-run" onclick="runTest()" id="btnRun" disabled>Run ▶</button>
+    </div>
+    <button class="btn btn-both" onclick="generateAndRun()" id="btnBoth">⚡ Generate & Run</button>
+  </div>
+
+  <!-- TOP RIGHT: Code output -->
+  <div class="panel panel-right">
+    <div class="panel-label green">Generated code</div>
+    <div id="codeArea" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="placeholder">
+        <div class="placeholder-icon">{ }</div>
+        <div class="placeholder-text">Generated Robot Framework code will appear here.<br>Click Generate or ⚡ Generate & Run to start.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM RIGHT: Results -->
+  <div class="panel-results">
+    <div class="panel-label amber">Test results</div>
+    <div class="results-area" id="resultsArea">
+      <div class="results-placeholder">
+        <div style="font-size:28px;opacity:.2">▶</div>
+        <div>Run a test to see results here</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const EXAMPLES = {
+  'Open Google and search': 'Open a Chrome browser, go to https://www.google.com, search for "Robot Framework tutorial", wait for results to load, then close the browser.',
+  'Login to a website': 'Open the browser, go to https://the-internet.herokuapp.com/login, enter username "tomsmith" and password "SuperSecretPassword!", click the login button, verify the page shows a success message, then close the browser.',
+  'Fill and submit a form': 'Open the browser, navigate to https://demoqa.com/text-box, fill in the Full Name with "Test User", Email with "test@example.com", click Submit, verify the output section appears, then close.',
+  'Verify page title and URL': 'Open Chrome, go to https://www.google.com, verify the page title contains "Google", verify the current URL contains "google.com", then close the browser.'
+};
+
+let generatedCode = '';
+const SERVER = "http://localhost:5000";
+
+// ── Check server status ──────────────────────────────────────────────────────
+async function checkServer() {
+  try {
+    const r = await fetch(SERVER + '/status', {signal: AbortSignal.timeout(3000)});
+    const d = await r.json();
+    if (d.ollama) {
+      document.getElementById('serverDot').className = 'dot online';
+      document.getElementById('serverLabel').textContent = 'ollama online · llama3';
+    } else {
+      document.getElementById('serverDot').className = 'dot offline';
+      document.getElementById('serverLabel').textContent = 'ollama offline — run: ollama serve';
+    }
+  } catch {
+    document.getElementById('serverDot').className = 'dot offline';
+    document.getElementById('serverLabel').textContent = 'backend offline — run app.py';
+  }
+}
+checkServer();
+setInterval(checkServer, 5000);
+
+function useExample(el) {
+  const key = el.textContent.trim();
+  if (EXAMPLES[key]) {
+    document.getElementById('description').value = EXAMPLES[key];
+    document.getElementById('description').focus();
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function syntaxHighlight(code) {
+  return code.split('\n').map(line => {
+    if (line.startsWith('***')) return `<span class="s-sec">${escHtml(line)}</span>`;
+    if (line.match(/^#/)) return `<span class="s-cmt">${escHtml(line)}</span>`;
+    if (line.match(/^\$\{|^@\{|^&\{/)) {
+      return `<span class="s-var">${escHtml(line)}</span>`;
+    }
+    if (line.match(/^    /)) {
+      return escHtml(line)
+        .replace(/(\$\{[^}]+\})/g, '<span class="s-var">$1</span>');
+    }
+    if (line.trim() && !line.startsWith(' ')) {
+      return `<span class="s-set">${escHtml(line)}</span>`;
+    }
+    return escHtml(line);
+  }).join('\n');
+}
+
+function showCode(code) {
+  generatedCode = code;
+  document.getElementById('btnRun').disabled = false;
+  document.getElementById('codeArea').innerHTML = `
+    <div class="code-wrapper">
+      <div class="code-toolbar">
+        <div class="mac-dot mac-r"></div>
+        <div class="mac-dot mac-y"></div>
+        <div class="mac-dot mac-g"></div>
+        <span class="code-fname">test_generated.robot</span>
+        <button class="copy-btn" onclick="copyCode()">Copy</button>
+      </div>
+      <div class="code-scroll">
+        <pre>${syntaxHighlight(code)}</pre>
+      </div>
+    </div>`;
+}
+
+function showCodeLoading(msg) {
+  document.getElementById('codeArea').innerHTML = `
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div class="loading-msg">${escHtml(msg)}</div>
+    </div>`;
+}
+
+function showCodeError(msg) {
+  document.getElementById('codeArea').innerHTML = `
+    <div class="error-wrap">
+      <div style="font-size:22px">⚠</div>
+      <div><strong>Error:</strong> ${escHtml(msg)}</div>
+    </div>`;
+}
+
+function showResultsLoading() {
+  document.getElementById('resultsArea').innerHTML = `
+    <div class="results-placeholder">
+      <div class="spinner" style="border-top-color:var(--green)"></div>
+      <div style="margin-top:10px;font-size:12px">Running tests...</div>
+    </div>`;
+}
+
+function showResults(data) {
+  const ra = document.getElementById('resultsArea');
+
+  if (data.error) {
+    ra.innerHTML = `<div class="overall-banner fail"><span class="banner-icon">✗</span><span>${escHtml(data.error)}</span></div>`;
+    return;
+  }
+
+  const overall = data.overall === 'PASS' ? 'pass' : 'fail';
+  const icon = overall === 'pass' ? '✓' : '✗';
+  const label = overall === 'pass' ? 'ALL TESTS PASSED' : 'SOME TESTS FAILED';
+
+  let html = `
+    <div class="overall-banner ${overall}">
+      <span class="banner-icon">${icon}</span>
+      <span>${label}</span>
+      <span class="banner-stats">${data.passed} passed · ${data.failed} failed · ${data.tests_run} total</span>
+    </div>`;
+
+  if (data.test_results && data.test_results.length > 0) {
+    for (const t of data.test_results) {
+      const cls = t.status === 'PASS' ? 'pass' : 'fail';
+      html += `
+        <div class="test-row">
+          <span class="test-badge ${cls}">${t.status}</span>
+          <div>
+            <div class="test-name">${escHtml(t.name)}</div>
+            ${t.message ? `<div class="test-msg">${escHtml(t.message)}</div>` : ''}
+          </div>
+        </div>`;
+    }
+  }
+
+  if (data.stdout) {
+    html += `
+      <div class="stdout-box">
+        <pre>${escHtml(data.stdout.slice(-2000))}</pre>
+      </div>`;
+  }
+
+  ra.innerHTML = html;
+}
+
+function setLoading(generating, running) {
+  document.getElementById('btnGenerate').disabled = generating || running;
+  document.getElementById('btnRun').disabled = running || !generatedCode;
+  document.getElementById('btnBoth').disabled = generating || running;
+  document.getElementById('btnGenerate').textContent = generating ? 'Generating...' : 'Generate →';
+  document.getElementById('btnBoth').textContent = (generating || running) ? '⚡ Working...' : '⚡ Generate & Run';
+}
+
+function getPayload() {
+  return {
+    // no api key needed
+    description: document.getElementById('description').value.trim(),
+    browser: document.getElementById('browser').value
+  };
+}
+
+async function generate() {
+  const p = getPayload();
+  
+  if (!p.description) { alert('Describe your test first'); return; }
+
+  setLoading(true, false);
+  showCodeLoading('Claude is writing your test case...');
+
+  try {
+    const r = await fetch(SERVER + '/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(p)
+    });
+    const data = await r.json();
+    if (data.error) { showCodeError(data.error); return; }
+    showCode(data.code);
+  } catch(e) {
+    showCodeError('Cannot reach backend. Is app.py running?');
+  } finally {
+    setLoading(false, false);
+  }
+}
+
+async function runTest() {
+  if (!generatedCode) { alert('Generate a test first'); return; }
+
+  setLoading(false, true);
+  showResultsLoading();
+
+  try {
+    const r = await fetch(SERVER + '/run', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({code: generatedCode})
+    });
+    const data = await r.json();
+    showResults(data);
+  } catch(e) {
+    showResults({error: 'Cannot reach backend. Is app.py running?'});
+  } finally {
+    setLoading(false, false);
+  }
+}
+
+async function generateAndRun() {
+  const p = getPayload();
+  
+  if (!p.description) { alert('Describe your test first'); return; }
+
+  setLoading(true, true);
+  showCodeLoading('Claude is writing your test case...');
+  showResultsLoading();
+
+  try {
+    const r = await fetch(SERVER + '/generate-and-run', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(p)
+    });
+    const data = await r.json();
+    if (data.error && !data.code) { showCodeError(data.error); showResults(data); return; }
+    if (data.code) showCode(data.code);
+    showResults(data);
+  } catch(e) {
+    showCodeError('Cannot reach backend. Is app.py running?');
+    showResults({error: 'Cannot reach backend.'});
+  } finally {
+    setLoading(false, false);
+  }
+}
+
+function copyCode() {
+  if (!generatedCode) return;
+  navigator.clipboard.writeText(generatedCode).then(() => {
+    const b = document.querySelector('.copy-btn');
+    b.textContent = 'Copied!';
+    b.style.color = 'var(--green)';
+    setTimeout(() => { b.textContent = 'Copy'; b.style.color = ''; }, 2000);
+  });
+}
+
+document.getElementById('description').addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key === 'Enter') generateAndRun();
+});
+</script>
+</body>
+</html>

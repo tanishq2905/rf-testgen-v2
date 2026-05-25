@@ -22,7 +22,10 @@ Rules:
 - Add a *** Keywords *** section for reusable steps
 - Use 4-space indentation consistently
 - Always end with Close Browser or Close All Browsers
-- Output ONLY the Robot Framework code, no explanation, no markdown fences, no backticks"""
+- Output ONLY the Robot Framework code, no explanation, no markdown fences, no backticks
+- Use 'Title Should Contain' instead of 'Title Should Be' for page title checks
+- Use 'gc' as the browser name, never 'chrome'
+- Use 'Wait Until Element Is Visible' with timeout=10s for all elements"""
 
 
 def check_ollama():
@@ -34,7 +37,7 @@ def check_ollama():
 
 
 def generate_robot_code(description, browser):
-    prompt = f"{SYSTEM_PROMPT}\n\nUse {browser} as the browser.\n\nTest to generate:\n{description}"
+    prompt = f"{SYSTEM_PROMPT}\n\nUse {browser} as the browser. Important: use 'gc' as the browser name for Google Chrome, not 'chrome'. Important: use 'gc' as the browser name for Google Chrome, not 'chrome'.\n\nTest to generate:\n{description}"
 
     payload = {
         "model": OLLAMA_MODEL,
@@ -134,7 +137,7 @@ def status():
 def generate():
     data = request.json
     description = data.get("description", "").strip()
-    browser = data.get("browser", "chrome")
+    browser = data.get("browser", "gc")
 
     if not description:
         return jsonify({"error": "Description is required"}), 400
@@ -169,7 +172,7 @@ def run():
 def generate_and_run():
     data = request.json
     description = data.get("description", "").strip()
-    browser = data.get("browser", "chrome")
+    browser = data.get("browser", "gc")
 
     if not description:
         return jsonify({"error": "Description is required"}), 400

@@ -1,5 +1,13 @@
-flask
-flask-cors
-requests
+# Step 1: Run this command to upgrade pip: "python3 -m pip install --upgrade pip"
+# Step 2: Run this command to install the dependencies: pip3 install -r requirements.txt
+# Step 3: In VSCode, install this extension to use robot framework features: "Robot Framework Language Server" by robocorp
+
+selenium                            
 robotframework
 robotframework-seleniumlibrary
+robotframework-selenium2library
+robotframework-pythonlibcore
+openpyxl
+rpaframework
+pyjwt
+robotframework-faker

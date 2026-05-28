@@ -1,38 +1,42 @@
 # RF TestGen v2 🤖
 
-An AI-powered Robot Framework test case generator **and runner**. Describe your test in plain English — get production-ready `.robot` code generated and executed instantly.
+An AI-powered Robot Framework test case generator **and runner**. Describe your test in plain English — the app scrapes the real page, understands your intent, matches real locators, and executes the test automatically.
 
 Runs completely **free and offline** using [Ollama](https://ollama.com) with Llama 3. No API key needed.
+
+---
+
+## ✨ How It Works
+
+```
+You describe test in plain English
+           ↓
+Selenium scrapes the real page (handles JS sites)
+           ↓
+Llama 3 parses your intent → returns JSON steps
+           ↓
+Llama 3 matches each step to real scraped locators
+           ↓
+Our code builds 100% valid Robot Framework
+           ↓
+Robot Framework runs the test in Chrome
+           ↓
+Pass/Fail results shown in the UI
+```
+
+No guessed locators. No invented keywords. Works on any website.
 
 ---
 
 ## ✨ Features
 
 - **Plain English → Robot Framework** — no syntax knowledge needed
-- **Actually runs the tests** — not just generates them, executes them and shows pass/fail
-- **Live results panel** — see individual test pass/fail with error messages
-- **100% free** — powered by Ollama running locally, no API costs
-- **Works offline** — no internet required after setup
-- **Syntax highlighted output** — colour-coded Robot Framework code
-- **Multiple browsers** — Chrome, Firefox, Edge
-
----
-
-## 🏗️ Architecture
-
-```
-Browser UI (index.html)
-      ↓
-Flask Backend (app.py)
-      ↓
-Ollama (local LLM — Llama 3)
-      ↓
-Generates .robot file
-      ↓
-Runs via robot command
-      ↓
-Returns pass/fail results to UI
-```
+- **Real page scraping** — uses headless Chrome to handle JavaScript sites
+- **Smart locator matching** — Llama matches your intent to real page elements
+- **Actually runs the tests** — executes and shows pass/fail results
+- **100% free and offline** — powered by Ollama + Llama 3
+- **Works on any website** — scrapes locators dynamically
+- **Known sites support** — Google, the-internet, demoqa work out of the box
 
 ---
 
@@ -40,7 +44,7 @@ Returns pass/fail results to UI
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/rf-testgen-v2.git
+git clone https://github.com/tanishq2905/rf-testgen-v2.git
 cd rf-testgen-v2
 ```
 
@@ -58,16 +62,10 @@ curl -fsSL https://ollama.com/install.sh | sh
 ```bash
 ollama pull llama3
 ```
-This downloads the model (~4GB) once. Free forever after.
 
-### 5. Install ChromeDriver
-Make sure ChromeDriver matches your Chrome version and is in your PATH:
+### 5. Install Chrome
 ```bash
-# Ubuntu/Debian
-sudo apt install chromium-chromedriver
-
-# Or use webdriver-manager
-pip install webdriver-manager
+sudo apt install google-chrome-stable -y
 ```
 
 ### 6. Run the backend
@@ -76,27 +74,35 @@ python3 app.py
 ```
 
 ### 7. Open the app
-Go to **http://localhost:5000** in your browser.
+Go to **http://localhost:5000**
 
 ---
 
 ## 📖 Usage
 
-1. Describe your test in plain English
+1. Describe your test in plain English — include the URL
 2. Choose your browser
 3. Click **⚡ Generate & Run**
-4. Watch the code get generated and executed in real time
-5. See pass/fail results in the results panel
+4. Watch the terminal as it scrapes, parses and builds
+5. See pass/fail results in the UI
 
 ### Example prompts
 
 ```
-Open Google, search for "Robot Framework", wait for results to load, then close the browser.
+Go to https://www.google.com, search for Robot Framework tutorial,
+wait for results to load, then close the browser.
 ```
 
 ```
-Go to https://the-internet.herokuapp.com/login, log in with username tomsmith
-and password SuperSecretPassword!, verify the success message appears, then close.
+Go to https://the-internet.herokuapp.com/login, log in with
+username tomsmith and password SuperSecretPassword!,
+verify the success message appears, then close.
+```
+
+```
+Open https://demoqa.com/text-box, fill Full Name with Test User,
+Email with test@example.com, click Submit,
+verify the output section appears, then close.
 ```
 
 ---
@@ -105,7 +111,12 @@ and password SuperSecretPassword!, verify the success message appears, then clos
 
 ```
 rf-testgen-v2/
-├── app.py              # Flask backend — generates and runs tests
+├── app.py              # Flask backend
+│                         - Selenium page scraper
+│                         - Llama intent parser
+│                         - Llama locator matcher
+│                         - Robot Framework builder
+│                         - Test runner
 ├── index.html          # Frontend UI
 ├── requirements.txt    # Python dependencies
 ├── .gitignore
@@ -121,16 +132,17 @@ rf-testgen-v2/
 | `/generate` | POST | Generate .robot code from description |
 | `/run` | POST | Run existing .robot code |
 | `/generate-and-run` | POST | Generate and run in one step |
+| `/status` | GET | Check if Ollama is running |
 
 ---
 
 ## ⚙️ Requirements
 
 - Python 3.8+
-- Ollama with Llama 3
+- Ollama with Llama 3 (~4GB)
 - Robot Framework 6+
 - SeleniumLibrary
-- Chrome + ChromeDriver (or Firefox + GeckoDriver)
+- Google Chrome
 - 8GB RAM minimum
 
 ---
@@ -138,10 +150,11 @@ rf-testgen-v2/
 ## 🤝 Contributing
 
 Pull requests welcome! Ideas:
-- [ ] Support more Ollama models (Mistral, Gemma, Phi3)
+- [ ] Add more known sites to KNOWN_SITES dict
+- [ ] Support Firefox and Edge scraping
 - [ ] Save and replay test history
 - [ ] Export results as PDF report
-- [ ] Page Object Model output option
+- [ ] Add credentials input form in UI
 - [ ] Support Playwright library
 
 ## 📄 License
